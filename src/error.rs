@@ -4,7 +4,7 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum AppError {
-    #[error("Missing Authorozation Headers")]
+    #[error("Missing Authorization Headers")]
     MissingAuthorization,
     #[error("Invalid Credentials")]
     InvalidCredentials,
