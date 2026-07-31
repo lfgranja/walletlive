@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{models::Asset, routes};
 use axum::Router;
@@ -12,7 +12,7 @@ pub struct App;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub assets: Arc<Mutex<Vec<Asset>>>,
+    pub assets: Arc<Mutex<HashMap<i64, Asset>>>,
 }
 
 impl AppState {
