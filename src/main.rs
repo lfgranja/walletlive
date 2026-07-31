@@ -1,8 +1,9 @@
 use crate::app::App;
 
 mod app;
-mod models;
-mod routes;
+pub mod auth;
+pub mod models;
+pub mod routes;
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
