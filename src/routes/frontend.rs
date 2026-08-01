@@ -13,5 +13,5 @@ struct LoginPage;
 
 async fn login_page() -> Result<Html<String>, AppError> {
     let html = LoginPage.render()?;
-    todo!()
+    Ok(Html(html))
 }
