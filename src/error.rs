@@ -10,6 +10,8 @@ pub enum AppError {
     InvalidCredentials,
     #[error("Asset does not exist")]
     AssetDoesNotExist,
+    #[error("User does not exist")]
+    UserDoesNotExist,
     #[error("This username is already registered")]
     UsernameTaken,
     #[error(transparent)]
@@ -32,8 +34,8 @@ impl IntoResponse for AppError {
         let status = match self {
             Self::UsernameTaken | Self::MissingAuthorization => StatusCode::BAD_REQUEST,
             Self::InvalidCredentials => StatusCode::UNAUTHORIZED,
-            Self::AssetDoesNotExist => StatusCode::NOT_FOUND,
-            Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::AssetDoesNotExist | Self::UserDoesNotExist => StatusCode::NOT_FOUND,
+            Self::Database(_) | Self::Template(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         (status, Json(error_response)).into_response()
