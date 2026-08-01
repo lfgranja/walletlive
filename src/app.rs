@@ -1,8 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
-
-use crate::{models::Asset, routes};
+use crate::routes;
 use axum::Router;
-use tokio::{net::TcpListener, sync::Mutex};
+use sqlx::PgPool;
+use tokio::net::TcpListener;
 use tracing::info;
 use tracing_subscriber::{
     Layer, fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt,
@@ -12,14 +11,14 @@ pub struct App;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub assets: Arc<Mutex<HashMap<i64, Asset>>>,
+    pub db: PgPool,
 }
 
 impl AppState {
-    fn new() -> Self {
-        Self {
-            assets: Default::default(),
-        }
+    async fn new() -> color_eyre::Result<Self> {
+        let database_url = std::env::var("DATABASE_URL")?;
+        let db = PgPool::connect(&database_url).await?;
+        Ok(Self { db })
     }
 }
 
@@ -31,10 +30,14 @@ impl App {
 
         tracing_subscriber::registry().with(layer).init();
 
+        dotenvy::dotenv()?;
+
+        let state = AppState::new().await?;
+
         let listener = TcpListener::bind("0.0.0.0:3000").await?;
         let router = Router::new()
             .nest("/api", routes::api::router())
-            .with_state(AppState::new());
+            .with_state(state);
 
         info!("Starting service");
 
