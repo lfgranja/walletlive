@@ -1,9 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
-
-use crate::{models::Asset, routes};
+use crate::routes;
 use axum::Router;
 use sqlx::PgPool;
-use tokio::{net::TcpListener, sync::Mutex};
+use tokio::net::TcpListener;
 use tracing::info;
 use tracing_subscriber::{
     Layer, fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt,
@@ -13,7 +11,6 @@ pub struct App;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub assets: Arc<Mutex<HashMap<i64, Asset>>>,
     pub db: PgPool,
 }
 
@@ -21,10 +18,7 @@ impl AppState {
     async fn new() -> color_eyre::Result<Self> {
         let database_url = std::env::var("DATABASE_URL")?;
         let db = PgPool::connect(&database_url).await?;
-        Ok(Self {
-            assets: Default::default(),
-            db,
-        })
+        Ok(Self { db })
     }
 }
 
@@ -35,6 +29,8 @@ impl App {
             .boxed();
 
         tracing_subscriber::registry().with(layer).init();
+
+        dotenvy::dotenv()?;
 
         let state = AppState::new().await?;
 
