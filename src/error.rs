@@ -14,6 +14,8 @@ pub enum AppError {
     UsernameTaken,
     #[error(transparent)]
     Database(#[from] sqlx::Error),
+    #[error(transparent)]
+    Template(#[from] askama::Error),
 }
 
 #[derive(Serialize)]
