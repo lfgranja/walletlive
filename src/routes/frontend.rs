@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::{
     Form, Router,
-    response::{Html, IntoResponse, Redirect},
+    response::{Html, IntoResponse, Redirect, Response},
     routing::get,
 };
 use axum_extra::extract::{
@@ -50,11 +50,16 @@ async fn login(
         Err(other_err) => return Err(other_err),
     };
 
-    let cookie = Cookie::build(("token", user.id().to_string())).http_only(true);
+    let token = user.auth_token()?;
+
+    let cookie = Cookie::build(("token", token)).http_only(true);
 
     Ok((jar.add(cookie), Redirect::to("/")))
 }
 
-async fn index(user: User) -> Result<Html<String>, AppError> {
-    Ok(Html(format!("Hello, {0}", user.username())))
+async fn index(maybe_user: Option<User>) -> Result<Response, AppError> {
+    match maybe_user {
+        Some(user) => Ok(Html(format!("Hello, {}!", user.username())).into_response()),
+        None => Ok(Redirect::to("/login").into_response()),
+    }
 }
