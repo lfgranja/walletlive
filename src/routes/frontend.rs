@@ -1,5 +1,9 @@
 use askama::Template;
-use axum::{Form, Router, response::Html, routing::get};
+use axum::{
+    Form, Router,
+    response::{Html, IntoResponse, Redirect},
+    routing::get,
+};
 use serde::Deserialize;
 
 use crate::{
@@ -7,7 +11,9 @@ use crate::{
 };
 
 pub fn router() -> Router<AppState> {
-    Router::new().route("/login", get(login_page).post(login))
+    Router::new()
+        .route("/", get(index))
+        .route("/login", get(login_page).post(login))
 }
 
 #[derive(Template)]
@@ -28,7 +34,7 @@ struct LoginForm {
 async fn login(
     repository: Repository,
     Form(request): Form<LoginForm>,
-) -> Result<Html<String>, AppError> {
+) -> Result<impl IntoResponse, AppError> {
     let unauth_user = UnauthenticatedUser::new(request.username, request.password);
     let user = match unauth_user.authenticate(&repository).await {
         Ok(user) => user,
@@ -36,5 +42,9 @@ async fn login(
         Err(other_err) => return Err(other_err),
     };
 
-    Ok(Html(user.username().clone()))
+    Ok(Redirect::to("/"))
+}
+
+async fn index() -> Result<Html<String>, AppError> {
+    Ok(Html("Hello, World!".to_string()))
 }
