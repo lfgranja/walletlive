@@ -7,7 +7,7 @@ use crate::{
 };
 
 pub fn router() -> Router<AppState> {
-    Router::new().route("/login", get(login_page))
+    Router::new().route("/login", get(login_page).post(login))
 }
 
 #[derive(Template)]
