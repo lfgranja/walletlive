@@ -52,4 +52,8 @@ impl User {
     pub const fn username(&self) -> &String {
         &self.username
     }
+
+    pub const fn id(&self) -> i64 {
+        self.id
+    }
 }
