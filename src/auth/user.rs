@@ -11,7 +11,7 @@ impl UnauthenticatedUser {
     pub async fn authenticate(&self, repository: &Repository) -> Result<User, AppError> {
         let user_record = match repository.get_user_by_name(&self.username).await? {
             Some(user_record) => user_record,
-            None => return Err(AppError::InvalidCredentials),
+            None => return Err(AppError::UserDoesNotExist),
         };
 
         match password_auth::verify_password(&self.password, &user_record.password_hash) {
