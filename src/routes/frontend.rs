@@ -4,10 +4,17 @@ use axum::{
     response::{Html, IntoResponse, Redirect},
     routing::get,
 };
+use axum_extra::extract::{
+    CookieJar,
+    cookie::{self, Cookie},
+};
 use serde::Deserialize;
 
 use crate::{
-    app::AppState, auth::user::UnauthenticatedUser, error::AppError, repository::Repository,
+    app::AppState,
+    auth::user::{UnauthenticatedUser, User},
+    error::AppError,
+    repository::Repository,
 };
 
 pub fn router() -> Router<AppState> {
@@ -33,6 +40,7 @@ struct LoginForm {
 
 async fn login(
     repository: Repository,
+    jar: CookieJar,
     Form(request): Form<LoginForm>,
 ) -> Result<impl IntoResponse, AppError> {
     let unauth_user = UnauthenticatedUser::new(request.username, request.password);
@@ -42,9 +50,11 @@ async fn login(
         Err(other_err) => return Err(other_err),
     };
 
-    Ok(Redirect::to("/"))
+    let cookie = Cookie::build(("token", user.id().to_string())).http_only(true);
+
+    Ok((jar.add(cookie), Redirect::to("/")))
 }
 
-async fn index() -> Result<Html<String>, AppError> {
-    Ok(Html("Hello, World!".to_string()))
+async fn index(user: User) -> Result<Html<String>, AppError> {
+    Ok(Html(format!("Hello, {0}", user.username())))
 }
