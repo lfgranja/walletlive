@@ -11,7 +11,7 @@ impl UnauthenticatedUser {
     pub async fn authenticate(&self, repository: &Repository) -> Result<User, AppError> {
         let user_record = match repository.get_user_by_name(&self.username).await? {
             Some(user_record) => user_record,
-            None => return Err(AppError::InvalidCredentials),
+            None => return Err(AppError::UserDoesNotExist),
         };
 
         match password_auth::verify_password(&self.password, &user_record.password_hash) {
@@ -33,6 +33,10 @@ impl UnauthenticatedUser {
 
         Ok(User::new(user_record.id, user_record.username))
     }
+
+    pub(crate) fn new(username: String, password: String) -> Self {
+        Self { username, password }
+    }
 }
 
 pub struct User {
@@ -43,5 +47,9 @@ pub struct User {
 impl User {
     fn new(id: i64, username: String) -> Self {
         Self { id, username }
+    }
+
+    pub const fn username(&self) -> &String {
+        &self.username
     }
 }
