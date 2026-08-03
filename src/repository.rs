@@ -110,6 +110,28 @@ impl Repository {
         .fetch_all(&self.db)
         .await
     }
+
+    pub async fn insert_owned_asset(
+        &self,
+        user_id: i64,
+        asset_id: i64,
+        quantity: f64,
+        unit_value: f64,
+    ) -> sqlx::Result<()> {
+        sqlx::query!(
+            "INSERT INTO owned_assets
+            (user_id, asset_id, quantity_owned, bought_for)
+            VALUES ($1, $2, $3, $4);",
+            user_id,
+            asset_id,
+            quantity,
+            unit_value
+        )
+        .execute(&self.db)
+        .await?;
+
+        Ok(())
+    }
 }
 
 impl FromRequestParts<AppState> for Repository {
