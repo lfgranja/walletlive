@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sqlx::types::Json;
 use time::OffsetDateTime;
 
 #[derive(Serialize, Clone)]
