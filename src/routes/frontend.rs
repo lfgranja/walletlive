@@ -1,19 +1,18 @@
 use askama::Template;
 use axum::{
     Form, Router,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect},
     routing::get,
 };
-use axum_extra::extract::{
-    CookieJar,
-    cookie::{self, Cookie},
-};
+use axum_extra::extract::{CookieJar, cookie::Cookie};
 use serde::Deserialize;
+use tokio::try_join;
 
 use crate::{
     app::AppState,
     auth::user::{UnauthenticatedUser, User},
     error::AppError,
+    models::{Asset, OwnedAsset},
     repository::Repository,
 };
 
@@ -21,6 +20,8 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(index))
         .route("/login", get(login_page).post(login))
+        .route("/logout", get(logout))
+        .route("/assets", get(assets).post(purchase_asset))
 }
 
 #[derive(Template)]
@@ -52,14 +53,41 @@ async fn login(
 
     let token = user.auth_token()?;
 
-    let cookie = Cookie::build(("token", token)).http_only(true);
+    let cookie = Cookie::build(("token", token)).http_only(true).build();
 
     Ok((jar.add(cookie), Redirect::to("/")))
 }
 
-async fn index(maybe_user: Option<User>) -> Result<Response, AppError> {
+pub async fn logout(jar: CookieJar) -> impl IntoResponse {
+    (jar.remove("token"), Redirect::to("/login"))
+}
+
+async fn index(maybe_user: Option<User>) -> Result<Redirect, AppError> {
     match maybe_user {
-        Some(user) => Ok(Html(format!("Hello, {}!", user.username())).into_response()),
-        None => Ok(Redirect::to("/login").into_response()),
+        Some(_) => Ok(Redirect::to("/assets")),
+        None => Ok(Redirect::to("/login")),
     }
+}
+
+#[derive(Template)]
+#[template(path = "assets.html")]
+pub struct AssetsPage {
+    owned_assets: Vec<OwnedAsset>,
+    available_assets: Vec<Asset>,
+    user: User,
+}
+
+pub async fn assets(repository: Repository, user: User) -> Result<Html<String>, AppError> {
+    let (owned_assets, available_assets) = try_join!(
+        repository.list_owned_assets(user.id()),
+        repository.list_assets()
+    )?;
+
+    let html = AssetsPage {
+        owned_assets,
+        available_assets,
+        user,
+    }
+    .render()?;
+    Ok(Html(html))
 }
