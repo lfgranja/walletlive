@@ -5,7 +5,7 @@ use sqlx::PgPool;
 
 use crate::{
     app::AppState,
-    models::{Asset, UserRecord},
+    models::{Asset, UserAsset, UserRecord},
 };
 
 pub struct Repository {
@@ -18,6 +18,21 @@ impl Repository {
             Asset,
             "SELECT id, name, unit_value
                 FROM assets;"
+        )
+        .fetch_all(&self.db)
+        .await
+    }
+
+    pub async fn get_user_assets(&self, user_id: i64) -> sqlx::Result<Vec<UserAsset>> {
+        sqlx::query_as!(
+            UserAsset,
+            r#"
+            SELECT a.id, a.name, a.unit_value, ua.quantity
+            FROM assets a
+            INNER JOIN user_assets ua ON a.id = ua.asset_id
+            WHERE ua.user_id = $1
+            "#,
+            user_id
         )
         .fetch_all(&self.db)
         .await
