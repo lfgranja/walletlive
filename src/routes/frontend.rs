@@ -1,11 +1,11 @@
 use askama::Template;
-use rand::seq::IndexedRandom;
 use axum::{
     Form, Router,
     response::{Html, IntoResponse, Redirect, Response},
     routing::get,
 };
 use axum_extra::extract::{CookieJar, cookie::Cookie};
+use rand::seq::IndexedRandom;
 use serde::Deserialize;
 use time::Duration;
 
@@ -67,7 +67,9 @@ async fn index(maybe_user: Option<User>) -> Result<Response, AppError> {
 }
 
 async fn logout(jar: CookieJar) -> Result<impl IntoResponse, AppError> {
-    let cookie = Cookie::build(("token", "")).http_only(true).max_age(Duration::seconds(0));
+    let cookie = Cookie::build(("token", ""))
+        .http_only(true)
+        .max_age(Duration::seconds(0));
     Ok((jar.remove(cookie), Redirect::to("/login")))
 }
 
@@ -134,17 +136,11 @@ const CURIOSIDADES_HISTORICAS: &[&str] = &[
     "O conceito de juros compostos foi chamado por Albert Einstein de 'a oitava maravilha do mundo'.",
 ];
 
-async fn dashboard(
-    user: User,
-    repository: Repository,
-) -> Result<Html<String>, AppError> {
+async fn dashboard(user: User, repository: Repository) -> Result<Html<String>, AppError> {
     let user_assets = repository.get_user_assets(user.id()).await?;
 
     // Calculate total portfolio value using Rust iterators
-    let total_carteira: f64 = user_assets
-        .iter()
-        .map(|asset| asset.total_value())
-        .sum();
+    let total_carteira: f64 = user_assets.iter().map(|asset| asset.total_value()).sum();
 
     // Format in Rust to avoid template filter issues
     let total_carteira_formatado = format!("{:.2}", total_carteira).replace('.', ",");
